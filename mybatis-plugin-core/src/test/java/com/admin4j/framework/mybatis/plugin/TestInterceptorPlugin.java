@@ -10,8 +10,6 @@ import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
 import org.junit.Test;
 
-import java.util.Arrays;
-
 /**
  * @author andanyang
  * @since 2023/6/29 14:43
@@ -28,9 +26,9 @@ public class TestInterceptorPlugin {
         public UserDataScopeBO currentDataScope(DataScope dataScope) {
             UserDataScopeBO UserDataScopeBO = new UserDataScopeBO();
             UserDataScopeBO.setType(DataScopeEnum.SELF);
-            UserDataScopeBO.setCustomDeptIds(Arrays.asList(1L, 2L, 101L));
+            //UserDataScopeBO.setCustomDeptIds(Arrays.asList(1L, 2L, 101L));
             UserDataScopeBO.setUserId(new LongValue(1L));
-            UserDataScopeBO.setDeptIds(Arrays.asList(168L, 192L, 191L));
+            //UserDataScopeBO.setDeptIds(Arrays.asList(168L, 192L, 191L));
             return UserDataScopeBO;
         }
     });

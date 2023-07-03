@@ -12,6 +12,7 @@ import java.util.List;
 
 /**
  * 用户数据权限信息
+ *
  * @author andanyang
  * @since 2023/3/28 17:55
  */
@@ -30,21 +31,42 @@ public class UserDataScopeBO {
      * 模块
      */
     //private String module;
-    /**
-     * 自定义的部门ID
-     */
-    private List<Long> customDeptIds = Collections.emptyList();
+    ///**
+    // * 自定义的部门ID
+    // */
+    //private List<Long> customDeptIds = Collections.emptyList();
 
     /**
      * 获取当前的用户ID
      */
     private Expression userId;
+    ///**
+    // * 当前用所属部门
+    // */
+    //private List<Long> deptIds;
+    ///**
+    // * 当前用所属部门 树
+    // */
+    //private List<String> deptTrees;
+
     /**
-     * 当前用所属部门
+     * 当前用户属于哪个部门
      */
-    private List<Long> deptIds;
+    private List<DeptInfoDTO> deptInfos;
     /**
-     * 当前用所属部门 树
+     * 当前用户所管理的部门信息,
+     * 有管理 管理的部门信息，将返回其以及下属的所有部门数据
      */
-    private List<String> deptTrees;
+    private List<DeptInfoDTO> managerDeptInfos;
+    /**
+     * 自定义的部门ID
+     */
+    private List<DeptInfoDTO> customDeptInfos = Collections.emptyList();
+
+    /**
+     * @return 是否拥有管理部门
+     */
+    public boolean hasManagerDept() {
+        return getManagerDeptInfos() != null && !getManagerDeptInfos().isEmpty();
+    }
 }

@@ -10,4 +10,10 @@
             where name like concat('%',concat(#{name},'%'))
         </if>
     </select>
+    <select id="queryJoin" resultType="java.lang.Object">
+        select * from crm_custom cc inner join sys_user su on cc.salesman = su.user_id
+        <if test="name != null and name != ''">
+            where name like concat('%',concat(#{name},'%')) or id > 0
+        </if>
+    </select>
 </mapper>

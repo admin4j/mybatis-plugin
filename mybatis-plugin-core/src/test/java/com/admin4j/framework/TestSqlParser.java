@@ -10,9 +10,9 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.util.SelectUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
-
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -229,4 +229,13 @@ public class TestSqlParser {
     }
 
 
+    @Test
+    public void testC() {
+        List<String> sortedList1 = Arrays.asList("A", "C", "E");
+        List<String> sortedList2 = Arrays.asList("B", "D", "F", "A");
+        List<String> mergedList = CollectionUtils.collate(sortedList1, sortedList2);
+        System.out.println("mergedList = " + mergedList);
+        Collection<String> union = CollectionUtils.union(sortedList1, sortedList2);
+        System.out.println("mergedList = " + union);
+    }
 }

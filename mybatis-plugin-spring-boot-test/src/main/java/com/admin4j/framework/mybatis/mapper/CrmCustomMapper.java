@@ -11,8 +11,11 @@ import java.util.List;
  * @since 2023/7/3 13:25
  */
 @Mapper
+@DataScope(module = "Custom", table = "crm_custom", field = "salesman")
 public interface CrmCustomMapper {
 
     @DataScope(module = "Custom", table = "crm_custom", field = "salesman")
     List<CrmCustom> query(String name);
+
+    List<Object> queryJoin(String name);
 }

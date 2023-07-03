@@ -1,6 +1,7 @@
 package com.admin4j.framework.mybatis.mapper;
 
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;
+import com.admin4j.framework.mybatis.entity.CrmCustom;
 import com.admin4j.framework.mybatis.service.DataScopeInfoHandler;
 import org.junit.Before;
 import org.junit.jupiter.api.Test;
@@ -28,8 +29,8 @@ public class CrmCustomMapperTest {
     }
 
     private void doTest() {
-        //List<CrmCustom> crmCustoms = crmCustomMapper.query("an");
-        //System.out.println("query = " + crmCustoms);
+        List<CrmCustom> crmCustoms = crmCustomMapper.query("an");
+        System.out.println("query = " + crmCustoms);
 
         List<Object> queryJoin = crmCustomMapper.queryJoin("an");
         System.out.println("queryJoin = " + queryJoin);

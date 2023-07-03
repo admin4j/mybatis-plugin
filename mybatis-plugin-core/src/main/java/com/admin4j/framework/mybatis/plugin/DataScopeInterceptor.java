@@ -1,9 +1,9 @@
 package com.admin4j.framework.mybatis.plugin;
 
 import com.admin4j.framework.mybatis.IDataScopeInfoHandler;
+import com.admin4j.framework.mybatis.IDataScopeTableExpression;
 import com.admin4j.framework.mybatis.constant.DataScope;
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;
-import com.admin4j.framework.mybatis.entity.DeptInfoDTO;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
 import com.admin4j.framework.mybatis.exception.NoDataException;
 import com.admin4j.framework.mybatis.interceptor.BaseInterceptor;
@@ -12,32 +12,25 @@ import com.admin4j.framework.mybatis.util.MapperAnnotationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
-import net.sf.jsqlparser.expression.operators.relational.InExpression;
-import net.sf.jsqlparser.expression.operators.relational.ItemsList;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.WithItem;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
+import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
-import org.apache.ibatis.plugin.Interceptor;
-import org.apache.ibatis.plugin.Intercepts;
-import org.apache.ibatis.plugin.Invocation;
-import org.apache.ibatis.plugin.Signature;
+import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * mybatis数据权限拦截器
@@ -56,6 +49,7 @@ public class DataScopeInterceptor extends BaseInterceptor implements Interceptor
 
 
     final IDataScopeInfoHandler dataScopeInfoService;
+    final IDataScopeTableExpression IDataScopeTableExpression;
     protected ThreadLocal<DataScope> dataScopeThreadLocal = new ThreadLocal<>();
     protected ThreadLocal<UserDataScopeBO> userDataScopeThreadLocal = new ThreadLocal<>();
 
@@ -102,17 +96,20 @@ public class DataScopeInterceptor extends BaseInterceptor implements Interceptor
 
         // 获取到原查询sql语句
         String sql = boundSql.getSql();
-        sql = parse(sql);
+        try {
+            sql = parse(sql);
+        } catch (NoDataException noDataException) {
+            return Collections.emptyList();
+        }
+
         // 利用反射修改boundSql的字段
         Field field = boundSql.getClass().getDeclaredField("sql");
         field.setAccessible(true);
         field.set(boundSql, sql);
 
         // 修改完继续执行
-        List<Object> query = executor.query(ms, parameter, rowBounds, resultHandler, cacheKey, boundSql);
         clean();
-        return query;
-
+        return executor.query(ms, parameter, rowBounds, resultHandler, cacheKey, boundSql);
     }
 
     private void clean() {
@@ -143,6 +140,8 @@ public class DataScopeInterceptor extends BaseInterceptor implements Interceptor
         if (StringUtils.isBlank(field)) {
             field = "user_id";
         }
+
+        Column aliasColumn = getAliasColumn(table, field);
         UserDataScopeBO userDataScopeBO = userDataScopeThreadLocal.get();
         DataScopeEnum type = userDataScopeBO.getType();
         PlainValue plainValue = null;
@@ -150,178 +149,19 @@ public class DataScopeInterceptor extends BaseInterceptor implements Interceptor
         StringBuilder sql = null;
         switch (type) {
             case ALL:
-                return null;
+                return IDataScopeTableExpression.buildAll(aliasColumn, userDataScopeBO);
             case SELF:
-                sql = new StringBuilder("select user_id from sys_user_dept where ");
-
-                if (!userDataScopeBO.hasManagerDept()) {
-                    return new EqualsTo(getAliasColumn(table, field), userDataScopeBO.getUserId());
-                }
-
-                //加上自己管理的部门
-                //处理子部门数据
-                isFirst = true;
-                for (DeptInfoDTO dept : userDataScopeBO.getManagerDeptInfos()) {
-                    if (!isFirst) {
-                        sql.append(" OR ");
-                    }
-                    sql.append("dept_tree like '");
-                    sql.append(dept.getDeptTree());
-                    sql.append("%'");
-                    isFirst = false;
-                }
-                ItemsList itemsList = new ExpressionList(new PlainValue(sql.toString()));
-                return new InExpression(getAliasColumn(table, field), itemsList);
+                return IDataScopeTableExpression.buildSelf(aliasColumn, userDataScopeBO);
             case DEPARTMENT:
-                // user_id in (select user_id from sys_user_dept where dept_id in (1,2))
-                if (userDataScopeBO.getDeptInfos() == null || userDataScopeBO.getDeptInfos().isEmpty()) {
-                    throw new NoDataException("no any dept id");
-                }
-
-                List<DeptInfoDTO> deptInfos = userDataScopeBO.getDeptInfos();
-                //去除重复部门
-                if (userDataScopeBO.hasManagerDept()) {
-                    deptInfos = userDataScopeBO.getDeptInfos().stream().filter(i -> {
-                        for (DeptInfoDTO info : userDataScopeBO.getManagerDeptInfos()) {
-                            if (info.getDeptId().equals(i.getDeptId())) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }).collect(Collectors.toList());
-                }
-
-                boolean needOr = false;
-                sql = new StringBuilder("select user_id from sys_user_dept where ");
-                if (deptInfos.size() == 1) {
-                    needOr = true;
-                    sql.append("dept_id = " + deptInfos.get(0).getDeptId());
-                } else if (deptInfos.size() > 1) {
-                    needOr = true;
-                    isFirst = true;
-
-                    for (DeptInfoDTO dept : deptInfos) {
-                        if (!isFirst) {
-                            sql.append(" OR ");
-                        }
-                        sql.append("dept_id = ");
-                        sql.append(dept.getDeptId());
-                        isFirst = false;
-                    }
-                }
-
-                //又有管理的部门，需要权限穿透
-                if (userDataScopeBO.hasManagerDept()) {
-                    //处理子部门数据
-                    if (needOr) {
-                        sql.append(" OR ");
-                    }
-                    isFirst = true;
-                    for (DeptInfoDTO dept : userDataScopeBO.getManagerDeptInfos()) {
-                        if (!isFirst) {
-                            sql.append(" OR ");
-                        }
-                        sql.append("dept_tree like '");
-                        sql.append(dept.getDeptTree());
-                        sql.append("%'");
-                        isFirst = false;
-                    }
-                }
-                itemsList = new ExpressionList(new PlainValue(sql.toString()));
-                return new InExpression(getAliasColumn(table, field), itemsList);
+                return IDataScopeTableExpression.buildDepartment(aliasColumn, userDataScopeBO);
             //拼接sql
             case DEPARTMENT_SU:
-
-                // user_id in (select user_id from sys_data_scope where dept_tree like '1,2,3,%' or dept_tree like '1,2,4,%')
-                if (userDataScopeBO.getDeptInfos() == null || userDataScopeBO.getDeptInfos().isEmpty()) {
-                    throw new NoDataException("no any dep tree");
-                }
-
-                plainValue = null;
-
-                deptInfos = userDataScopeBO.getDeptInfos();
-                if (userDataScopeBO.hasManagerDept()) {
-                    //合并数组
-                    deptInfos = (List<DeptInfoDTO>) CollectionUtils.union(deptInfos, userDataScopeBO.getManagerDeptInfos());
-                }
-
-                isFirst = true;
-                sql = new StringBuilder("select user_id from sys_user_dept where ");
-                for (DeptInfoDTO deptInfo : deptInfos) {
-                    if (!isFirst) {
-                        sql.append(" OR ");
-                    }
-                    sql.append("dept_tree like '");
-                    sql.append(deptInfo.getDeptTree());
-                    sql.append("%'");
-                    isFirst = false;
-                }
-                plainValue = new PlainValue(sql.toString());
-
-                itemsList = new ExpressionList(plainValue);
-                return new InExpression(getAliasColumn(table, field), itemsList);
-
+                return IDataScopeTableExpression.buildDepartmentSub(aliasColumn, userDataScopeBO);
             case CUSTOM_DEPARTMENT:
 
-                // user_id in (select user_id from sys_data_scope where dept_id in (1,2,3,4)
-                if (userDataScopeBO.getCustomDeptInfos() == null || userDataScopeBO.getCustomDeptInfos().isEmpty()) {
-                    throw new NoDataException("no any CustomDeptIds");
-                }
-
-                deptInfos = userDataScopeBO.getCustomDeptInfos();
-                //去除重复部门
-                if (userDataScopeBO.hasManagerDept()) {
-                    deptInfos = userDataScopeBO.getCustomDeptInfos().stream().filter(i -> {
-                        for (DeptInfoDTO info : userDataScopeBO.getManagerDeptInfos()) {
-                            if (info.getDeptId().equals(i.getDeptId())) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }).collect(Collectors.toList());
-                }
-
-                needOr = false;
-                sql = new StringBuilder("select user_id from sys_user_dept where ");
-                if (deptInfos.size() == 1) {
-                    needOr = true;
-                    sql.append("dept_id = " + deptInfos.get(0).getDeptId());
-                } else if (deptInfos.size() > 1) {
-                    needOr = true;
-                    isFirst = true;
-
-                    for (DeptInfoDTO dept : deptInfos) {
-                        if (!isFirst) {
-                            sql.append(" OR ");
-                        }
-                        sql.append("dept_id = ");
-                        sql.append(dept.getDeptId());
-                        isFirst = false;
-                    }
-                }
-
-                //又有管理的部门，需要权限穿透
-                if (userDataScopeBO.hasManagerDept()) {
-                    //处理子部门数据
-                    if (needOr) {
-                        sql.append(" OR ");
-                    }
-                    isFirst = true;
-                    for (DeptInfoDTO dept : userDataScopeBO.getManagerDeptInfos()) {
-                        if (!isFirst) {
-                            sql.append(" OR ");
-                        }
-                        sql.append("dept_tree like '");
-                        sql.append(dept.getDeptTree());
-                        sql.append("%'");
-                        isFirst = false;
-                    }
-                }
-                itemsList = new ExpressionList(new PlainValue(sql.toString()));
-                return new InExpression(getAliasColumn(table, field), itemsList);
-
+                return IDataScopeTableExpression.buildDepartmentCustom(aliasColumn, userDataScopeBO);
             default:
-                throw new IllegalArgumentException();
+                throw new UnsupportedOperationException();
         }
     }
 
@@ -340,5 +180,13 @@ public class DataScopeInterceptor extends BaseInterceptor implements Interceptor
         }
         column.append(field);
         return new Column(column.toString());
+    }
+
+    @Override
+    public Object plugin(Object target) {
+        if (target instanceof Executor || target instanceof StatementHandler) {
+            return Plugin.wrap(target, this);
+        }
+        return target;
     }
 }

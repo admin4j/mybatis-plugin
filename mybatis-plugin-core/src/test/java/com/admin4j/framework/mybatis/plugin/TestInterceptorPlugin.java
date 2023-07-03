@@ -1,6 +1,7 @@
 package com.admin4j.framework.mybatis.plugin;
 
 import com.admin4j.framework.mybatis.IDataScopeInfoHandler;
+import com.admin4j.framework.mybatis.IDataScopeTableExpression;
 import com.admin4j.framework.mybatis.constant.DataScope;
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
@@ -31,7 +32,7 @@ public class TestInterceptorPlugin {
             //UserDataScopeBO.setDeptIds(Arrays.asList(168L, 192L, 191L));
             return UserDataScopeBO;
         }
-    });
+    }, new IDataScopeTableExpression());
 
     //@Test
     public String testInterceptor(String sql) {

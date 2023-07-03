@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 /**
  * mybatis 基础插件
+ *
  * @author andanyang
  * @since 2023/7/3 10:39
  */

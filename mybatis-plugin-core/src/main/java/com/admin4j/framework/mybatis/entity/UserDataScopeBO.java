@@ -69,4 +69,8 @@ public class UserDataScopeBO {
     public boolean hasManagerDept() {
         return getManagerDeptInfos() != null && !getManagerDeptInfos().isEmpty();
     }
+
+    public UserDataScopeBO(DataScopeEnum type) {
+        this.type = type;
+    }
 }

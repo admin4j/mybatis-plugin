@@ -7,7 +7,6 @@ import com.admin4j.framework.mybatis.constant.DataScopeEnum;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
 import com.admin4j.framework.mybatis.exception.NoDataException;
 import com.admin4j.framework.mybatis.interceptor.BaseInterceptor;
-import com.admin4j.framework.mybatis.interceptor.PlainValue;
 import com.admin4j.framework.mybatis.util.MapperAnnotationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -144,9 +143,6 @@ public class DataScopeInterceptor extends BaseInterceptor implements Interceptor
         Column aliasColumn = getAliasColumn(table, field);
         UserDataScopeBO userDataScopeBO = userDataScopeThreadLocal.get();
         DataScopeEnum type = userDataScopeBO.getType();
-        PlainValue plainValue = null;
-        boolean isFirst = true;
-        StringBuilder sql = null;
         switch (type) {
             case ALL:
                 return IDataScopeTableExpression.buildAll(aliasColumn, userDataScopeBO);

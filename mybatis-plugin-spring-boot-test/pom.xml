@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.admin4j.framework</groupId>
         <artifactId>mybatis-plugin</artifactId>
-        <version>1.0</version>
+        <version>1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>mybatis-plugin-spring-boot-test</artifactId>

@@ -1,6 +1,7 @@
 package com.admin4j.framework.mybatis.constant;
 
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
@@ -30,7 +31,7 @@ public enum DataScopeEnum {
     CUSTOM_DEPARTMENT(4),
     ALL(5);
 
-    //@EnumValue
+    @EnumValue
     @JsonValue
     private final int value;
 

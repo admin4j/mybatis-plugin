@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.admin4j.framework</groupId>
         <artifactId>mybatis-plugin</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>mybatis-plugin-core</artifactId>
@@ -66,7 +66,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

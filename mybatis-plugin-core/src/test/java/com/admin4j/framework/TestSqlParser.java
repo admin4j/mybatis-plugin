@@ -200,7 +200,7 @@ public class TestSqlParser {
         Select statement = (Select) CCJSqlParserUtil.parse(sqlStr);
         PlainSelect select = (PlainSelect) statement.getSelectBody();
         System.out.println("select = " + select);
-        //select 字段
+        // select 字段
         List<SelectItem> selectItems = select.getSelectItems();
 
         selectItems.forEach(i -> System.out.println("i = " + i));
@@ -210,22 +210,22 @@ public class TestSqlParser {
         System.out.println("fromItem = " + fromItem);
 
 
-        //select 字段
+        // select 字段
         SelectExpressionItem selectItem = (SelectExpressionItem) selectItems.get(0);
         Assert.assertEquals(new LongValue(1), selectItem.getExpression());
 
-        //表名
+        // 表名
         Table table = (Table) select.getFromItem();
         Assert.assertEquals("dual", table.getName());
 
-        //where 条件
+        // where 条件
         EqualsTo equalsTo = (EqualsTo) select.getWhere();
         Column a = (Column) equalsTo.getLeftExpression();
         Column b = (Column) equalsTo.getRightExpression();
         Assert.assertEquals("a", a.getColumnName());
         Assert.assertEquals("b", b.getColumnName());
 
-        //StatementVisitor
+        // StatementVisitor
     }
 
 
@@ -237,5 +237,51 @@ public class TestSqlParser {
         System.out.println("mergedList = " + mergedList);
         Collection<String> union = CollectionUtils.union(sortedList1, sortedList2);
         System.out.println("mergedList = " + union);
+    }
+
+    /**
+     * 测试子查询
+     */
+    @Test
+    public void testSubSql() throws JSQLParserException {
+        // String sql = "WITH myTable AS (SELECT * FROM table1) SELECT * FROM myTable";
+        String sql = " SELECT * FROM table1 t ,(select * from myTable) a";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
+
+        // 获取 WITH 子句中的项
+        WithItem withItem = (select).getWithItemsList().get(0);
+
+        // 获取项的名称
+        String name = withItem.getName();
+        System.out.println("Name: " + name);
+
+        // 获取项的列表
+        SelectBody selectBody = withItem.getSubSelect().getSelectBody();
+        System.out.println("With Item: " + selectBody.toString());
+    }
+
+    @Test
+    public void testSetOperationListExample() throws JSQLParserException {
+
+        String sql = "SELECT * FROM table1 UNION SELECT * FROM table2 INTERSECT SELECT * FROM table3";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        SelectBody selectBody = select.getSelectBody();
+
+        // 获取 SET 操作列表
+        SetOperationList setOperationList = (SetOperationList) selectBody;
+
+        // 获取第一个 SELECT 语句
+        PlainSelect plainSelect = (PlainSelect) setOperationList.getSelects().get(0);
+        System.out.println("First Select: " + plainSelect.toString());
+
+        // 获取其他 SELECT 语句和对应的 SetOperation 类型
+        List<SelectBody> selects = setOperationList.getSelects();
+        for (int i = 1; i < selects.size(); i++) {
+            selectBody = selects.get(i);
+            SetOperation setOperation = setOperationList.getOperations().get(i - 1);
+            System.out.println("Select: " + selectBody.toString());
+            System.out.println("Set Operation: " + setOperation.toString());
+        }
     }
 }

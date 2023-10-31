@@ -16,4 +16,11 @@
             where name like concat('%',concat(#{name},'%')) or id > 0
         </if>
     </select>
+    
+    <select id="queryLeftJoin" resultType="java.lang.Object">
+        select * from crm_custom cc left join sys_user su on cc.salesman = su.user_id
+        <if test="name != null and name != ''">
+            where name like concat('%',concat(#{name},'%')) or id > 15
+        </if>
+    </select>
 </mapper>

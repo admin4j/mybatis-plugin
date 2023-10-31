@@ -2,10 +2,14 @@ package com.admin4j.framework.mybatis.autoconfigure;
 
 import com.admin4j.framework.mybatis.IDataScopeInfoHandler;
 import com.admin4j.framework.mybatis.IDataScopeTableExpression;
+import com.admin4j.framework.mybatis.MybatisInterceptor;
+import com.admin4j.framework.mybatis.interceptor.SqlInterceptor;
 import com.admin4j.framework.mybatis.plugin.DataScopeInterceptor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+
+import java.util.List;
 
 /**
  * @author andanyang
@@ -25,5 +29,11 @@ public class MybatisPluginAutoConfigure {
     @ConditionalOnMissingBean(IDataScopeTableExpression.class)
     public IDataScopeTableExpression dataScopeTableExpression() {
         return new IDataScopeTableExpression();
+    }
+
+    @Bean
+    @ConditionalOnBean(SqlInterceptor.class)
+    public MybatisInterceptor mybatisInterceptor(List<SqlInterceptor> sqlInterceptors) {
+        return new MybatisInterceptor(sqlInterceptors);
     }
 }

@@ -3,7 +3,6 @@ package com.admin4j.framework.mybatis.mapper;
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;
 import com.admin4j.framework.mybatis.entity.CrmCustom;
 import com.admin4j.framework.mybatis.service.DataScopeInfoHandler;
-import org.junit.Before;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,17 +22,19 @@ public class CrmCustomMapperTest {
     @Autowired
     DataScopeInfoHandler dataScopeInfoHandler;
 
-    @Before
+    // @BeforeAll
     public void setUp() throws Exception {
-        //dataScopeInfoHandler.getUserDataScopeBO().setManagerDeptInfos(null);
+        // dataScopeInfoHandler.getUserDataScopeBO().setManagerDeptInfos(null);
     }
 
     private void doTest() {
-        List<CrmCustom> crmCustoms = crmCustomMapper.query("an");
+        List<CrmCustom> crmCustoms = crmCustomMapper.query("客户");
         System.out.println("query = " + crmCustoms);
 
-        List<Object> queryJoin = crmCustomMapper.queryJoin("an");
+        List<Object> queryJoin = crmCustomMapper.queryJoin("客户");
         System.out.println("queryJoin = " + queryJoin);
+        queryJoin = crmCustomMapper.queryLeftJoin("客户");
+        System.out.println("queryLeftJoin = " + queryJoin);
     }
 
     @Test

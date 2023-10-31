@@ -4,12 +4,18 @@ import com.admin4j.framework.mybatis.IDataScopeInfoHandler;
 import com.admin4j.framework.mybatis.IDataScopeTableExpression;
 import com.admin4j.framework.mybatis.constant.DataScope;
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;
+import com.admin4j.framework.mybatis.entity.DataTableInfoDTO;
+import com.admin4j.framework.mybatis.entity.DeptInfoDTO;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
 import com.admin4j.framework.mybatis.exception.MybatisPluginException;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
+import org.junit.Before;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author andanyang
@@ -22,27 +28,51 @@ public class TestInterceptorPlugin {
     String dataField = "user_id";
     Expression dataValue = new LongValue(1);
 
-    DataScopeInterceptor interceptor = new DataScopeInterceptor(new IDataScopeInfoHandler() {
-        @Override
-        public UserDataScopeBO currentDataScope(DataScope dataScope) {
-            UserDataScopeBO UserDataScopeBO = new UserDataScopeBO();
-            UserDataScopeBO.setType(DataScopeEnum.SELF);
-            //UserDataScopeBO.setCustomDeptIds(Arrays.asList(1L, 2L, 101L));
-            UserDataScopeBO.setUserId(new LongValue(1L));
-            //UserDataScopeBO.setDeptIds(Arrays.asList(168L, 192L, 191L));
-            return UserDataScopeBO;
-        }
-    }, new IDataScopeTableExpression());
+    DataScopeInterceptor interceptor;
+    DataTableInfoDTO dataTableInfoDTO;
+    // 用户自己的信息
+    UserDataScopeBO userDataScopeBO;
 
-    //@Test
+    @Before
+    public void init() {
+
+        userDataScopeBO = new UserDataScopeBO();
+        userDataScopeBO.setDataTableInfoDTO(dataTableInfoDTO);
+        userDataScopeBO.setType(DataScopeEnum.SELF);
+        // userDataScopeBO.setCustomDeptIds(Arrays.asList(1L, 2L, 101L));
+        userDataScopeBO.setUserId(new LongValue(1L));
+        // userDataScopeBO.setDeptIds(Arrays.asList(168L, 192L, 191L));
+
+        IDataScopeInfoHandler iDataScopeInfoHandler = new IDataScopeInfoHandler() {
+
+            /**
+             * @param dataTableInfoDTO
+             * @return 返回当前数据权限信息
+             */
+            @Override
+            public UserDataScopeBO currentDataScope(DataTableInfoDTO dataTableInfoDTO) {
+
+                return userDataScopeBO;
+            }
+        };
+        IDataScopeTableExpression iDataScopeTableExpression = new IDataScopeTableExpression();
+        interceptor = new DataScopeInterceptor(iDataScopeInfoHandler, iDataScopeTableExpression);
+
+        dataTableInfoDTO = new DataTableInfoDTO();
+        dataTableInfoDTO.setModule("org");
+        dataTableInfoDTO.setTable(dataTable);
+        dataTableInfoDTO.setField(dataField);
+    }
+
+
     public String testInterceptor(String sql) {
 
         System.out.println("========================= start =========================");
 
         String s = null;
         try {
-            s = interceptor.parse(sql);
-        } catch (MybatisPluginException e) {
+            s = interceptor.process(sql, dataTableInfoDTO);
+        } catch (MybatisPluginException | JSQLParserException e) {
             throw new RuntimeException(e);
         }
 
@@ -55,16 +85,19 @@ public class TestInterceptorPlugin {
 
         System.out.println("========================= start =========================");
 
-        String s = null;
+        String newSql = null;
         try {
-            DataScope annotation = this.getClass().getAnnotation(DataScope.class);
-            interceptor.dataScopeThreadLocal.set(annotation);
-            interceptor.userDataScopeThreadLocal.set(interceptor.dataScopeInfoService.currentDataScope(annotation));
-            s = interceptor.parse(sql);
+
+            newSql = interceptor.process(sql, dataTableInfoDTO);
         } catch (MybatisPluginException e) {
             throw new RuntimeException(e);
+        } catch (JSQLParserException e) {
+            throw new RuntimeException(e);
         }
-        assert successSql.equals(s);
+        System.out.println("originSql  = " + sql);
+        System.out.println("newSql     = " + newSql);
+        System.out.println("successSql = " + successSql);
+        assert successSql.equals(newSql);
 
         System.out.println("========================= end =========================");
     }
@@ -72,9 +105,11 @@ public class TestInterceptorPlugin {
     @Test
     public void testSimpleSql() throws JSQLParserException, MybatisPluginException {
 
-        //String s = interceptor.parserSingle("SELECT * FROM sys_user a,sys_user_role b", "12 = 1");
+        // String s = interceptor.processrSingle("SELECT * FROM sys_user a,sys_user_role b", "12 = 1");
         //
-        //System.out.println("s = " + s);
+        // System.out.println("s = " + s);
+
+        userDataScopeBO.setType(DataScopeEnum.SELF);
 
         testInterceptor("SELECT * FROM sys_user a",
                 "SELECT * FROM sys_user a WHERE a.user_id = 1");
@@ -98,7 +133,7 @@ public class TestInterceptorPlugin {
     @Test
     public void selectSubSelectIn() throws MybatisPluginException {
 
-        //IN
+        // IN
         //  testInterceptor("SELECT * FROM sys_user e WHERE e.id IN (select e1.id from entity1 e1 where e1.id = ?)", "SELECT * FROM sys_user e WHERE e.id IN (SELECT e1.id FROM entity1 e1 WHERE e1.id = ?) AND e.user_id = 1");
         testInterceptor("SELECT * FROM sys_user e WHERE e.id IN " +
                 "(select e1.id from entity1 e1 where e1.id = ?) and e.id = ?", "SELECT * FROM sys_user e WHERE e.id IN (SELECT e1.id FROM entity1 e1 WHERE e1.id = ?) AND e.id = ? AND e.user_id = 1");
@@ -327,6 +362,48 @@ public class TestInterceptorPlugin {
                         "WHERE e.id = e1.id",
                 "SELECT * FROM (((sys_user e, entity1 e1))) WHERE e.id = e1.id AND e.user_id = 1");
 
+    }
+
+
+    @Test
+    public void testManagerDeptInfos() throws JSQLParserException, MybatisPluginException {
+
+        // String s = interceptor.processrSingle("SELECT * FROM sys_user a,sys_user_role b", "12 = 1");
+        //
+        // System.out.println("s = " + s);
+
+        userDataScopeBO.setType(DataScopeEnum.SELF);
+        List<DeptInfoDTO> managerDeptInfos = new ArrayList<DeptInfoDTO>();
+        DeptInfoDTO deptInfoDTO1 = new DeptInfoDTO();
+        deptInfoDTO1.setDeptId(110L);
+        deptInfoDTO1.setDeptTree("100,110,");
+        managerDeptInfos.add(deptInfoDTO1);
+
+        DeptInfoDTO deptInfoDTO2 = new DeptInfoDTO();
+        deptInfoDTO2.setDeptId(120L);
+        deptInfoDTO2.setDeptTree("100,120,");
+        managerDeptInfos.add(deptInfoDTO2);
+
+        userDataScopeBO.setManagerDeptInfos(managerDeptInfos);
+
+        testInterceptor("SELECT * FROM sys_user a",
+                "SELECT * FROM sys_user a WHERE a.user_id IN (select user_id from sys_user_dept where dept_tree like '100,110,%' OR dept_tree like '100,120,%')");
+
+        testInterceptor("SELECT * FROM sys_user where name = 'and'",
+                "SELECT * FROM sys_user WHERE name = 'and' AND user_id IN (select user_id from sys_user_dept where dept_tree like '100,110,%' OR dept_tree like '100,120,%')");
+        testInterceptor("SELECT * FROM sys_user where name = 'and' or  age = 12",
+                "SELECT * FROM sys_user WHERE (name = 'and' OR age = 12) AND user_id IN (select user_id from sys_user_dept where dept_tree like '100,110,%' OR dept_tree like '100,120,%')");
+        testInterceptor("SELECT * FROM sys_user where (name = 'and' or  age = 12)",
+                "SELECT * FROM sys_user WHERE (name = 'and' OR age = 12) AND user_id IN (select user_id from sys_user_dept where dept_tree like '100,110,%' OR dept_tree like '100,120,%')");
+
+        /**
+         * not
+         */
+        testInterceptor("SELECT * FROM sys_user WHERE not (id = ? OR name = ?)",
+                "SELECT * FROM sys_user WHERE NOT (id = ? OR name = ?) AND user_id IN (select user_id from sys_user_dept where dept_tree like '100,110,%' OR dept_tree like '100,120,%')");
+
+        testInterceptor("SELECT * FROM sys_user u WHERE not (u.id = ? OR u.name = ?)",
+                "SELECT * FROM sys_user u WHERE NOT (u.id = ? OR u.name = ?) AND u.user_id IN (select user_id from sys_user_dept where dept_tree like '100,110,%' OR dept_tree like '100,120,%')");
     }
 
 }

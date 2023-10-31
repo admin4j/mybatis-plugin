@@ -27,6 +27,16 @@ public class MapperAnnotationUtil {
             return annotation;
         }
 
+        annotation = getAnnotationByIdNoCache(id, anClass);
+
+        annotationCache.put(id, annotation == null ? EMPTY_Annotation : annotation);
+        return annotation;
+    }
+
+    public static <T extends Annotation> T getAnnotationByIdNoCache(String id, Class<T> anClass) throws ClassNotFoundException {
+
+        T annotation = null;
+
         String className = StringUtils.substringBeforeLast(id, ".");
         String methodName = StringUtils.substringAfterLast(id, ".");
 
@@ -41,8 +51,6 @@ public class MapperAnnotationUtil {
         if (annotation == null) {
             annotation = aClass.getAnnotation(anClass);
         }
-
-        annotationCache.put(id, annotation == null ? EMPTY_Annotation : annotation);
         return annotation;
     }
 }

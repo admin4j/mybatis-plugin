@@ -21,6 +21,10 @@ import java.util.List;
 @NoArgsConstructor
 public class UserDataScopeBO {
 
+    /**
+     * 数据表信息
+     */
+    private DataTableInfoDTO dataTableInfoDTO;
 
     /**
      * 权限类型。；1：本人；2：本部门；3本部门及下级部门；4自定义部门；5全部
@@ -28,26 +32,10 @@ public class UserDataScopeBO {
     private DataScopeEnum type;
 
     /**
-     * 模块
-     */
-    //private String module;
-    ///**
-    // * 自定义的部门ID
-    // */
-    //private List<Long> customDeptIds = Collections.emptyList();
-
-    /**
      * 获取当前的用户ID
      */
     private Expression userId;
-    ///**
-    // * 当前用所属部门
-    // */
-    //private List<Long> deptIds;
-    ///**
-    // * 当前用所属部门 树
-    // */
-    //private List<String> deptTrees;
+
 
     /**
      * 当前用户属于哪个部门

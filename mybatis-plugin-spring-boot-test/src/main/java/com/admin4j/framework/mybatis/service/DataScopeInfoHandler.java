@@ -1,8 +1,8 @@
 package com.admin4j.framework.mybatis.service;
 
 import com.admin4j.framework.mybatis.IDataScopeInfoHandler;
-import com.admin4j.framework.mybatis.constant.DataScope;
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;
+import com.admin4j.framework.mybatis.entity.DataTableInfoDTO;
 import com.admin4j.framework.mybatis.entity.DeptInfoDTO;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
 import lombok.Data;
@@ -29,18 +29,18 @@ public class DataScopeInfoHandler implements IDataScopeInfoHandler {
         userDataScopeBO.setType(dataScopeEnum);
         userDataScopeBO.setUserId(new LongValue(1L));
 
-        DeptInfoDTO deptInfoDTO1 = new DeptInfoDTO(168L, "168,123,1");
-        DeptInfoDTO deptInfoDTO2 = new DeptInfoDTO(169L, "168,123,2");
-        DeptInfoDTO deptInfoDTO3 = new DeptInfoDTO(170L, "168,123,3");
-        DeptInfoDTO deptInfoDTO4 = new DeptInfoDTO(171L, "168,123,4");
+        DeptInfoDTO deptInfoDTO1 = new DeptInfoDTO(168L, "100,101,");
+        DeptInfoDTO deptInfoDTO2 = new DeptInfoDTO(169L, "100,102,");
+        DeptInfoDTO deptInfoDTO3 = new DeptInfoDTO(170L, "100,101,103,");
+        DeptInfoDTO deptInfoDTO4 = new DeptInfoDTO(171L, "100,101,105,");
         userDataScopeBO.setDeptInfos(Arrays.asList(deptInfoDTO1, deptInfoDTO2, deptInfoDTO3, deptInfoDTO4));
-        userDataScopeBO.setManagerDeptInfos(Arrays.asList(deptInfoDTO1, deptInfoDTO2, new DeptInfoDTO(172L, "168,123,5")));
+        userDataScopeBO.setManagerDeptInfos(Arrays.asList(deptInfoDTO1, deptInfoDTO2, new DeptInfoDTO(172L, "100,102,205,")));
 
 
-        DeptInfoDTO deptInfoDTO11 = new DeptInfoDTO(1681L, "168,123,11");
-        DeptInfoDTO deptInfoDTO12 = new DeptInfoDTO(1691L, "168,123,12");
-        DeptInfoDTO deptInfoDTO13 = new DeptInfoDTO(1701L, "168,123,13");
-        DeptInfoDTO deptInfoDTO14 = new DeptInfoDTO(1711L, "168,123,14");
+        DeptInfoDTO deptInfoDTO11 = new DeptInfoDTO(1681L, "100,102,104,211,");
+        DeptInfoDTO deptInfoDTO12 = new DeptInfoDTO(1691L, "100,102,109,213,");
+        DeptInfoDTO deptInfoDTO13 = new DeptInfoDTO(1701L, "100,102,109,216,");
+        DeptInfoDTO deptInfoDTO14 = new DeptInfoDTO(1711L, "100,102,206,224,");
         userDataScopeBO.setCustomDeptInfos(Arrays.asList(deptInfoDTO11, deptInfoDTO12, deptInfoDTO13, deptInfoDTO14));
     }
 
@@ -49,11 +49,13 @@ public class DataScopeInfoHandler implements IDataScopeInfoHandler {
         userDataScopeBO.setType(dataScopeEnum);
     }
 
+
     /**
+     * @param dataTableInfoDTO
      * @return 返回当前数据权限信息
      */
     @Override
-    public UserDataScopeBO currentDataScope(DataScope dataScope) {
+    public UserDataScopeBO currentDataScope(DataTableInfoDTO dataTableInfoDTO) {
         return userDataScopeBO;
     }
 }

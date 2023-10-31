@@ -1,4 +1,4 @@
-package com.admin4j.framework.mybatis.interceptor;
+package com.admin4j.framework.mybatis.entity;
 
 import lombok.Data;
 import net.sf.jsqlparser.expression.Expression;

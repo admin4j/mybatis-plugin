@@ -1,9 +1,9 @@
 package com.admin4j.framework.mybatis;
 
 import com.admin4j.framework.mybatis.entity.DeptInfoDTO;
+import com.admin4j.framework.mybatis.entity.PlainValue;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
 import com.admin4j.framework.mybatis.exception.NoDataException;
-import com.admin4j.framework.mybatis.interceptor.PlainValue;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
@@ -47,9 +47,9 @@ public class IDataScopeTableExpression {
             return new EqualsTo(field, userDataScopeBO.getUserId());
         }
 
-        //要求-自己也在自己管理的部门之下
-        //加上自己管理的部门
-        //处理子部门数据
+        // 要求-自己也在自己管理的部门之下
+        // 加上自己管理的部门
+        // 处理子部门数据
         isFirst = true;
         for (DeptInfoDTO dept : userDataScopeBO.getManagerDeptInfos()) {
             if (!isFirst) {
@@ -82,7 +82,7 @@ public class IDataScopeTableExpression {
         StringBuilder sql = null;
 
         List<DeptInfoDTO> deptInfos = userDataScopeBO.getDeptInfos();
-        //去除重复部门
+        // 去除重复部门
         if (userDataScopeBO.hasManagerDept()) {
             deptInfos = userDataScopeBO.getDeptInfos().stream().filter(i -> {
                 for (DeptInfoDTO info : userDataScopeBO.getManagerDeptInfos()) {
@@ -113,9 +113,9 @@ public class IDataScopeTableExpression {
             }
         }
 
-        //又有管理的部门，需要权限穿透
+        // 又有管理的部门，需要权限穿透
         if (userDataScopeBO.hasManagerDept()) {
-            //处理子部门数据
+            // 处理子部门数据
             if (needOr) {
                 sql.append(" OR ");
             }
@@ -153,7 +153,7 @@ public class IDataScopeTableExpression {
 
         List<DeptInfoDTO> deptInfos = userDataScopeBO.getDeptInfos();
         if (userDataScopeBO.hasManagerDept()) {
-            //合并数组
+            // 合并数组
             deptInfos = (List<DeptInfoDTO>) CollectionUtils.union(deptInfos, userDataScopeBO.getManagerDeptInfos());
         }
 
@@ -193,7 +193,7 @@ public class IDataScopeTableExpression {
         StringBuilder sql = null;
 
         List<DeptInfoDTO> deptInfos = userDataScopeBO.getCustomDeptInfos();
-        //去除重复部门
+        // 去除重复部门
         if (userDataScopeBO.hasManagerDept()) {
             deptInfos = userDataScopeBO.getCustomDeptInfos().stream().filter(i -> {
                 for (DeptInfoDTO info : userDataScopeBO.getManagerDeptInfos()) {
@@ -220,9 +220,9 @@ public class IDataScopeTableExpression {
             }
         }
 
-        //又有管理的部门，需要权限穿透
+        // 又有管理的部门，需要权限穿透
         if (userDataScopeBO.hasManagerDept()) {
-            //处理子部门数据
+            // 处理子部门数据
             if (needOr) {
                 sql.append(" OR ");
             }

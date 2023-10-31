@@ -1,6 +1,6 @@
 package com.admin4j.framework.mybatis;
 
-import com.admin4j.framework.mybatis.constant.DataScope;
+import com.admin4j.framework.mybatis.entity.DataTableInfoDTO;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
 
 
@@ -16,5 +16,5 @@ public interface IDataScopeInfoHandler {
     /**
      * @return 返回当前数据权限信息
      */
-    UserDataScopeBO currentDataScope(DataScope dataScope);
+    UserDataScopeBO currentDataScope(DataTableInfoDTO dataTableInfoDTO);
 }

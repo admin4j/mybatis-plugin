@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
+ * 部门信息
+ *
  * @author andanyang
  * @since 2023/7/3 13:57
  */

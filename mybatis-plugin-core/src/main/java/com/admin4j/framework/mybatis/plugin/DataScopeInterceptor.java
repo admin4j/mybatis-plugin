@@ -4,161 +4,82 @@ import com.admin4j.framework.mybatis.IDataScopeInfoHandler;
 import com.admin4j.framework.mybatis.IDataScopeTableExpression;
 import com.admin4j.framework.mybatis.constant.DataScope;
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;
+import com.admin4j.framework.mybatis.entity.DataTableInfoDTO;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
 import com.admin4j.framework.mybatis.exception.NoDataException;
-import com.admin4j.framework.mybatis.interceptor.BaseInterceptor;
+import com.admin4j.framework.mybatis.process.SelectSqlProcess;
 import com.admin4j.framework.mybatis.util.MapperAnnotationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
-import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.WithItem;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.ibatis.cache.CacheKey;
-import org.apache.ibatis.executor.Executor;
-import org.apache.ibatis.executor.statement.StatementHandler;
-import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
-import org.apache.ibatis.mapping.SqlCommandType;
-import org.apache.ibatis.plugin.*;
-import org.apache.ibatis.session.ResultHandler;
-import org.apache.ibatis.session.RowBounds;
+import org.springframework.core.annotation.Order;
 
-import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * mybatis数据权限拦截器
+ * https://github.com/pagehelper/Mybatis-PageHelper/blob/master/wikis/zh/Interceptor.md
  *
  * @author andanyang
  * @since 2023/6/28 15:59
  */
-
-@Intercepts({
-        @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
-        @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
-})
 @Slf4j
 @RequiredArgsConstructor
-public class DataScopeInterceptor extends BaseInterceptor implements Interceptor {
+@Order(Integer.MAX_VALUE)
+public class DataScopeInterceptor extends SelectSqlProcess {
 
 
     final IDataScopeInfoHandler dataScopeInfoService;
-    final IDataScopeTableExpression IDataScopeTableExpression;
-    protected ThreadLocal<DataScope> dataScopeThreadLocal = new ThreadLocal<>();
+    final IDataScopeTableExpression dataScopeTableExpression;
     protected ThreadLocal<UserDataScopeBO> userDataScopeThreadLocal = new ThreadLocal<>();
 
-    @Override
-    public Object intercept(Invocation invocation) throws Throwable {
-        Object[] args = invocation.getArgs();
-        MappedStatement ms = (MappedStatement) args[0];
-        String id = ms.getId();
+    public String process(String originSql, DataTableInfoDTO dataTableInfoDTO) throws JSQLParserException {
 
-        // 方法的参数
-        Object parameter = args[1];
-        RowBounds rowBounds = (RowBounds) args[2];
-        ResultHandler resultHandler = (ResultHandler) args[3];
+        UserDataScopeBO userDataScopeBO = dataScopeInfoService.currentDataScope(dataTableInfoDTO);
+        userDataScopeBO.setDataTableInfoDTO(dataTableInfoDTO);
+        userDataScopeThreadLocal.set(userDataScopeBO);
 
-        SqlCommandType sqlCommandType = ms.getSqlCommandType();
-        if (sqlCommandType == SqlCommandType.UNKNOWN || sqlCommandType == SqlCommandType.FLUSH) {
-            return invocation.proceed();
-        }
-
-        Executor executor = (Executor) invocation.getTarget();
-
-        CacheKey cacheKey;
-        BoundSql boundSql;
-        //由于逻辑关系，只会进入一次
-        if (args.length == 4) {
-            //4 个参数时
-            boundSql = ms.getBoundSql(parameter);
-            cacheKey = executor.createCacheKey(ms, parameter, rowBounds, boundSql);
-        } else {
-            //6 个参数时
-            cacheKey = (CacheKey) args[4];
-            boundSql = (BoundSql) args[5];
-        }
-
-
-        DataScope annotation = MapperAnnotationUtil.getAnnotationById(id, DataScope.class);
-        if (annotation == null) {
-            return invocation.proceed();
-        }
-
-        UserDataScopeBO UserDataScopeBO = dataScopeInfoService.currentDataScope(annotation);
-        userDataScopeThreadLocal.set(UserDataScopeBO);
-        dataScopeThreadLocal.set(annotation);
-
-        // 获取到原查询sql语句
-        String sql = boundSql.getSql();
-        try {
-            sql = parse(sql);
-        } catch (NoDataException noDataException) {
-            return Collections.emptyList();
-        }
-
-        // 利用反射修改boundSql的字段
-        Field field = boundSql.getClass().getDeclaredField("sql");
-        field.setAccessible(true);
-        field.set(boundSql, sql);
-
-        // 修改完继续执行
-        clean();
-        return executor.query(ms, parameter, rowBounds, resultHandler, cacheKey, boundSql);
+        return process(originSql);
     }
 
-    private void clean() {
-        dataScopeThreadLocal.remove();
-        userDataScopeThreadLocal.remove();
-    }
+    public Expression buildOriginTableExpression(final Table table) throws NoDataException {
 
+        UserDataScopeBO userDataScopeBO = userDataScopeThreadLocal.get();
+        Column aliasColumn = getAliasColumn(table, userDataScopeBO.getDataTableInfoDTO().getField());
+        DataScopeEnum type = userDataScopeBO.getType();
+        switch (type) {
+            case ALL:
+                return dataScopeTableExpression.buildAll(aliasColumn, userDataScopeBO);
+            case SELF:
+                return dataScopeTableExpression.buildSelf(aliasColumn, userDataScopeBO);
+            case DEPARTMENT:
+                return dataScopeTableExpression.buildDepartment(aliasColumn, userDataScopeBO);
+            // 拼接sql
+            case DEPARTMENT_SU:
+                return dataScopeTableExpression.buildDepartmentSub(aliasColumn, userDataScopeBO);
+            case CUSTOM_DEPARTMENT:
 
-    @Override
-    protected void processSelect(Select select, String sql) {
-
-        processSelectBody(select.getSelectBody(), null);
-        List<WithItem> withItemsList = select.getWithItemsList();
-        if (!ObjectUtils.isEmpty(withItemsList)) {
-            withItemsList.forEach(withItem -> processSelectBody(withItem, null));
+                return dataScopeTableExpression.buildDepartmentCustom(aliasColumn, userDataScopeBO);
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 
     @Override
     public Expression buildTableExpression(final Table table, final Expression where, final String whereSegment) throws NoDataException {
 
-        DataScope dataScope = dataScopeThreadLocal.get();
-        if (dataScope == null || (dataScope != null && !table.getName().equals(dataScope.table()))) {
+        DataTableInfoDTO dataTableInfoDTO = userDataScopeThreadLocal.get().getDataTableInfoDTO();
+        // 是资源表
+        if (dataTableInfoDTO == null || !table.getName().equals(dataTableInfoDTO.getTable())) {
             return null;
         }
-        String field = dataScope.field();
 
-        if (StringUtils.isBlank(field)) {
-            field = "user_id";
-        }
-
-        Column aliasColumn = getAliasColumn(table, field);
-        UserDataScopeBO userDataScopeBO = userDataScopeThreadLocal.get();
-        DataScopeEnum type = userDataScopeBO.getType();
-        switch (type) {
-            case ALL:
-                return IDataScopeTableExpression.buildAll(aliasColumn, userDataScopeBO);
-            case SELF:
-                return IDataScopeTableExpression.buildSelf(aliasColumn, userDataScopeBO);
-            case DEPARTMENT:
-                return IDataScopeTableExpression.buildDepartment(aliasColumn, userDataScopeBO);
-            //拼接sql
-            case DEPARTMENT_SU:
-                return IDataScopeTableExpression.buildDepartmentSub(aliasColumn, userDataScopeBO);
-            case CUSTOM_DEPARTMENT:
-
-                return IDataScopeTableExpression.buildDepartmentCustom(aliasColumn, userDataScopeBO);
-            default:
-                throw new UnsupportedOperationException();
-        }
+        return buildOriginTableExpression(table);
     }
 
     /**
@@ -178,11 +99,50 @@ public class DataScopeInterceptor extends BaseInterceptor implements Interceptor
         return new Column(column.toString());
     }
 
+    private void clean() {
+        userDataScopeThreadLocal.remove();
+    }
+
+    /**
+     * 处理之前调用
+     *
+     * @param ms
+     * @return false 不执行
+     */
     @Override
-    public Object plugin(Object target) {
-        if (target instanceof Executor || target instanceof StatementHandler) {
-            return Plugin.wrap(target, this);
-        }
-        return target;
+    public boolean processBefore(MappedStatement ms) {
+
+
+        DataTableInfoDTO dataTableInfo = getDataTableInfo(ms.getId());
+        UserDataScopeBO userDataScopeBO = dataScopeInfoService.currentDataScope(dataTableInfo);
+        userDataScopeBO.setDataTableInfoDTO(dataTableInfo);
+        userDataScopeThreadLocal.set(userDataScopeBO);
+
+        return true;
+    }
+
+    private Map<String, DataTableInfoDTO> dataTableInfoDTOMap = new ConcurrentHashMap<>(64);
+
+    private DataTableInfoDTO getDataTableInfo(String msId) {
+
+        return dataTableInfoDTOMap.computeIfAbsent(msId, (key) -> {
+
+            DataScope annotation = null;
+            try {
+                annotation = MapperAnnotationUtil.getAnnotationByIdNoCache(msId, DataScope.class);
+                DataTableInfoDTO dataTableInfoDTO = new DataTableInfoDTO();
+                dataTableInfoDTO.setModule(annotation.module());
+                dataTableInfoDTO.setField(annotation.field());
+                dataTableInfoDTO.setTable(annotation.table());
+                return dataTableInfoDTO;
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public void processEnd() {
+        clean();
     }
 }

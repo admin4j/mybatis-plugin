@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.admin4j.framework.mybatis.interceptor;
+package com.admin4j.framework.mybatis.process;
 
 
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -35,41 +34,59 @@ import java.util.stream.Collectors;
 
 
 /**
- * mybatis 基础插件
+ * sql 处理 基础插件
+ * 参考 BaseInterceptor
+ * https://github.com/baomidou/mybatis-plus/blob/3.0/mybatis-plus-extension/src/main/java/com/baomidou/mybatisplus/extension/plugins/inner/BaseMultiTableInnerInterceptor.java
  *
  * @author andanyang
  * @since 2023/7/3 10:39
  */
 @NoArgsConstructor
 @ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
 @SuppressWarnings({"rawtypes"})
 @Slf4j
-public abstract class BaseInterceptor extends SqlParserSupport {
+public abstract class AbstractSqlProcess {
 
+    /**
+     * 处理 select 语句
+     *
+     * @param selectBody
+     * @param whereSegment
+     */
     protected void processSelectBody(SelectBody selectBody, final String whereSegment) {
         if (selectBody == null) {
             return;
         }
+        // SELECT语句的简单形式,即没有使用任何特殊语法（如GROUP BY、HAVING、ORDER BY等）
         if (selectBody instanceof PlainSelect) {
             processPlainSelect((PlainSelect) selectBody, whereSegment);
         } else if (selectBody instanceof WithItem) {
+            // with 子语句
             WithItem withItem = (WithItem) selectBody;
             processSelectBody(withItem.getSubSelect().getSelectBody(), whereSegment);
         } else {
+            // 对于 union语句
+            // 表示一个 SELECT 语句中的多个 SET 操作的集合。一个 SET 操作由一个
+            // SelectBody 和一个 SetOperation 类型组成，常见的 SetOperation 类型有 UNION、INTERSECT 和 EXCEPT。
             SetOperationList operationList = (SetOperationList) selectBody;
             List<SelectBody> selectBodyList = operationList.getSelects();
             if (ObjectUtils.isNotEmpty(selectBodyList)) {
                 selectBodyList.forEach(body -> processSelectBody(body, whereSegment));
             }
         }
+
+        // ValuesStatement 不常用
     }
 
     /**
      * delete update 语句 where 处理
+     *
+     * @param table        表
+     * @param where        where 查询条件
+     * @param whereSegment 查询条件片段 mappedStatementId – Mybatis MappedStatement Id 根据该参数可以判断具体执行方法
      */
     protected Expression andExpression(Table table, Expression where, final String whereSegment) {
-        //获得where条件表达式
+        // 获得where条件表达式
         final Expression expression = buildTableExpression(table, where, whereSegment);
         if (expression == null) {
             return where;
@@ -85,11 +102,12 @@ public abstract class BaseInterceptor extends SqlParserSupport {
     }
 
     /**
-     * 处理 PlainSelect
+     * 处理 PlainSelect（简单的select 不含 group等）
      */
     protected void processPlainSelect(final PlainSelect plainSelect, final String whereSegment) {
         //#3087 github
-        List<SelectItem> selectItems = plainSelect.getSelectItems(); //select filed
+        // select filed
+        List<SelectItem> selectItems = plainSelect.getSelectItems();
         if (ObjectUtils.isNotEmpty(selectItems)) {
             selectItems.forEach(selectItem -> processSelectItem(selectItem, whereSegment));
         }
@@ -196,6 +214,12 @@ public abstract class BaseInterceptor extends SqlParserSupport {
         }
     }
 
+    /**
+     * 处理查询出来的字段
+     *
+     * @param selectItem
+     * @param whereSegment
+     */
     protected void processSelectItem(SelectItem selectItem, final String whereSegment) {
         if (selectItem instanceof SelectExpressionItem) {
             SelectExpressionItem selectExpressionItem = (SelectExpressionItem) selectItem;
@@ -289,7 +313,7 @@ public abstract class BaseInterceptor extends SqlParserSupport {
             leftTable = mainTable;
         }
 
-        //对于 on 表达式写在最后的 join，需要记录下前面多个 on 的表名
+        // 对于 on 表达式写在最后的 join，需要记录下前面多个 on 的表名
         Deque<List<Table>> onTableDeque = new LinkedList<>();
         for (Join join : joins) {
             // 处理 on 表达式

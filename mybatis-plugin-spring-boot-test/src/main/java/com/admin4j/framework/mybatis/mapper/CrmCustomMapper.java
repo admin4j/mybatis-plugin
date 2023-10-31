@@ -18,4 +18,6 @@ public interface CrmCustomMapper {
     List<CrmCustom> query(String name);
 
     List<Object> queryJoin(String name);
+
+    List<Object> queryLeftJoin(String an);
 }

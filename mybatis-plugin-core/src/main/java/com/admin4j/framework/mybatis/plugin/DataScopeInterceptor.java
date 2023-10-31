@@ -44,10 +44,12 @@ public class DataScopeInterceptor extends SelectSqlProcess {
         userDataScopeBO.setDataTableInfoDTO(dataTableInfoDTO);
         userDataScopeThreadLocal.set(userDataScopeBO);
 
-        return process(originSql);
+        String sql = process(originSql);
+        processEnd();
+        return sql;
     }
 
-    public Expression buildOriginTableExpression(final Table table) throws NoDataException {
+    protected Expression buildOriginTableExpression(final Table table) throws NoDataException {
 
         UserDataScopeBO userDataScopeBO = userDataScopeThreadLocal.get();
         Column aliasColumn = getAliasColumn(table, userDataScopeBO.getDataTableInfoDTO().getField());

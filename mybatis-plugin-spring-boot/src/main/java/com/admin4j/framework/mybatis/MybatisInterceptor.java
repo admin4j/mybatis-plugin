@@ -16,7 +16,6 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -88,11 +87,9 @@ public class MybatisInterceptor implements Interceptor {
                 }
                 Statement statement = CCJSqlParserUtil.parse(boundSql.getSql());
                 for (SqlInterceptor query : sqlInterceptors) {
-                    if (!query.processBefore(ms)) {
-                        return Collections.emptyList();
+                    if (query.processBefore(ms)) {
+                        query.processStatement(statement);
                     }
-
-                    query.processStatement(statement);
                 }
                 // 使用mybatis 工具类方法 利用反射修改boundSql的字段
                 MetaObject metaObject = MetaObject.forObject(boundSql, SystemMetaObject.DEFAULT_OBJECT_FACTORY, SystemMetaObject.DEFAULT_OBJECT_WRAPPER_FACTORY, DEFAULT_REFLECTOR_FACTORY);

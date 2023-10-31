@@ -114,6 +114,9 @@ public class DataScopeInterceptor extends SelectSqlProcess {
 
 
         DataTableInfoDTO dataTableInfo = getDataTableInfo(ms.getId());
+        if (_EMPTY_DATA_TABLE.equals(dataTableInfo)) {
+            return false;
+        }
         UserDataScopeBO userDataScopeBO = dataScopeInfoService.currentDataScope(dataTableInfo);
         userDataScopeBO.setDataTableInfoDTO(dataTableInfo);
         userDataScopeThreadLocal.set(userDataScopeBO);
@@ -122,6 +125,7 @@ public class DataScopeInterceptor extends SelectSqlProcess {
     }
 
     private Map<String, DataTableInfoDTO> dataTableInfoDTOMap = new ConcurrentHashMap<>(64);
+    private static final DataTableInfoDTO _EMPTY_DATA_TABLE = new DataTableInfoDTO();
 
     private DataTableInfoDTO getDataTableInfo(String msId) {
 
@@ -130,6 +134,9 @@ public class DataScopeInterceptor extends SelectSqlProcess {
             DataScope annotation = null;
             try {
                 annotation = MapperAnnotationUtil.getAnnotationByIdNoCache(msId, DataScope.class);
+                if (annotation == null) {
+                    return _EMPTY_DATA_TABLE;
+                }
                 DataTableInfoDTO dataTableInfoDTO = new DataTableInfoDTO();
                 dataTableInfoDTO.setModule(annotation.module());
                 dataTableInfoDTO.setField(annotation.field());

@@ -47,7 +47,7 @@ public class IDataScopeTableExpression {
             return new EqualsTo(field, userDataScopeBO.getUserId());
         }
 
-        // 要求-自己也在自己管理的部门之下
+        // ** 要求-自己也在自己管理的部门之下 否则需要添加 userId = userDataScopeBO.getUserId()
         // 加上自己管理的部门
         // 处理子部门数据
         isFirst = true;

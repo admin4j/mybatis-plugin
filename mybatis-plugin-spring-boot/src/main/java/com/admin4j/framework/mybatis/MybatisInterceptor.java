@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Properties;
 
 /**
+ * Executor 拦截器高级教程
+ * https://github.com/pagehelper/Mybatis-PageHelper/blob/master/wikis/zh/Interceptor.md
  * 参考：
  * https://github.com/baomidou/mybatis-plus/blob/3.0/mybatis-plus-extension/src/main/java/com/baomidou/mybatisplus/extension/plugins/MybatisPlusInterceptor.java
  *

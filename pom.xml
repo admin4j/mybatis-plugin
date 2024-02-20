@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.admin4j</groupId>
         <artifactId>admin4j-parent</artifactId>
-        <version>0.8.0</version>
+        <version>0.9.5</version>
     </parent>
     <groupId>com.admin4j.framework</groupId>
     <artifactId>mybatis-plugin</artifactId>
@@ -22,7 +22,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <revision>0.8.0-SNAPSHOT</revision>
+        <revision>0.9.5-SNAPSHOT</revision>
     </properties>
 
     <dependencies>

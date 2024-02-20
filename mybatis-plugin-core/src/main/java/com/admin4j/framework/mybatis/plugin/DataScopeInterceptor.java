@@ -22,8 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * mybatis数据权限拦截器
- * https://github.com/pagehelper/Mybatis-PageHelper/blob/master/wikis/zh/Interceptor.md
+ * 数据权限拦截器
  *
  * @author andanyang
  * @since 2023/6/28 15:59
@@ -38,6 +37,14 @@ public class DataScopeInterceptor extends SelectSqlProcess {
     final IDataScopeTableExpression dataScopeTableExpression;
     protected ThreadLocal<UserDataScopeBO> userDataScopeThreadLocal = new ThreadLocal<>();
 
+    /**
+     * 根据表信息，直接修改原始sql
+     *
+     * @param originSql
+     * @param dataTableInfoDTO
+     * @return
+     * @throws JSQLParserException
+     */
     public String process(String originSql, DataTableInfoDTO dataTableInfoDTO) throws JSQLParserException {
 
         UserDataScopeBO userDataScopeBO = dataScopeInfoService.currentDataScope(dataTableInfoDTO);
@@ -49,10 +56,9 @@ public class DataScopeInterceptor extends SelectSqlProcess {
         return sql;
     }
 
-    protected Expression buildOriginTableExpression(final Table table) throws NoDataException {
+    public Expression buildOriginTableExpression(final Column aliasColumn) throws NoDataException {
 
         UserDataScopeBO userDataScopeBO = userDataScopeThreadLocal.get();
-        Column aliasColumn = getAliasColumn(table, userDataScopeBO.getDataTableInfoDTO().getField());
         DataScopeEnum type = userDataScopeBO.getType();
         switch (type) {
             case ALL:
@@ -75,13 +81,16 @@ public class DataScopeInterceptor extends SelectSqlProcess {
     @Override
     public Expression buildTableExpression(final Table table, final Expression where, final String whereSegment) throws NoDataException {
 
-        DataTableInfoDTO dataTableInfoDTO = userDataScopeThreadLocal.get().getDataTableInfoDTO();
+        UserDataScopeBO userDataScopeBO = userDataScopeThreadLocal.get();
+        DataTableInfoDTO dataTableInfoDTO = userDataScopeBO.getDataTableInfoDTO();
         // 是资源表
         if (dataTableInfoDTO == null || !table.getName().equals(dataTableInfoDTO.getTable())) {
             return null;
         }
 
-        return buildOriginTableExpression(table);
+        // 列信息
+        Column aliasColumn = getAliasColumn(table, userDataScopeBO.getDataTableInfoDTO().getField());
+        return buildOriginTableExpression(aliasColumn);
     }
 
     /**
@@ -101,7 +110,12 @@ public class DataScopeInterceptor extends SelectSqlProcess {
         return new Column(column.toString());
     }
 
-    private void clean() {
+
+    public void set(UserDataScopeBO userDataScopeBO) {
+        userDataScopeThreadLocal.set(userDataScopeBO);
+    }
+
+    public void clean() {
         userDataScopeThreadLocal.remove();
     }
 
@@ -117,6 +131,9 @@ public class DataScopeInterceptor extends SelectSqlProcess {
 
         DataTableInfoDTO dataTableInfo = getDataTableInfo(ms.getId());
         if (_EMPTY_DATA_TABLE.equals(dataTableInfo)) {
+            return false;
+        }
+        if (dataTableInfo.getTable().isEmpty()) {
             return false;
         }
         UserDataScopeBO userDataScopeBO = dataScopeInfoService.currentDataScope(dataTableInfo);

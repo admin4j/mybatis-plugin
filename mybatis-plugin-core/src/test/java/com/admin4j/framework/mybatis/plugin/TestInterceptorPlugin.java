@@ -11,10 +11,12 @@ import com.admin4j.framework.mybatis.exception.MybatisPluginException;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.schema.Column;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -33,6 +35,8 @@ public class TestInterceptorPlugin {
     // 用户自己的信息
     UserDataScopeBO userDataScopeBO;
 
+    IDataScopeInfoHandler dataScopeInfoService;
+
     @Before
     public void init() {
 
@@ -41,7 +45,13 @@ public class TestInterceptorPlugin {
         userDataScopeBO.setType(DataScopeEnum.SELF);
         // userDataScopeBO.setCustomDeptIds(Arrays.asList(1L, 2L, 101L));
         userDataScopeBO.setUserId(new LongValue(1L));
-        // userDataScopeBO.setDeptIds(Arrays.asList(168L, 192L, 191L));
+        userDataScopeBO.setDeptInfos(Arrays.asList(new DeptInfoDTO(168L, "0,1"),
+
+                new DeptInfoDTO(168L, "0,1"),
+                new DeptInfoDTO(169L, "0,2"),
+                new DeptInfoDTO(170L, "0,3"),
+                new DeptInfoDTO(171L, "0,4")
+        ));
 
         IDataScopeInfoHandler iDataScopeInfoHandler = new IDataScopeInfoHandler() {
 
@@ -65,13 +75,24 @@ public class TestInterceptorPlugin {
     }
 
 
+    public String process(String originSql, DataTableInfoDTO dataTableInfoDTO) throws JSQLParserException {
+
+        UserDataScopeBO userDataScopeBO = dataScopeInfoService.currentDataScope(dataTableInfoDTO);
+        userDataScopeBO.setDataTableInfoDTO(dataTableInfoDTO);
+        interceptor.userDataScopeThreadLocal.set(userDataScopeBO);
+
+        String sql = interceptor.process(originSql);
+        interceptor.processEnd();
+        return sql;
+    }
+
     public String testInterceptor(String sql) {
 
         System.out.println("========================= start =========================");
 
         String s = null;
         try {
-            s = interceptor.process(sql, dataTableInfoDTO);
+            s = process(sql, dataTableInfoDTO);
         } catch (MybatisPluginException | JSQLParserException e) {
             throw new RuntimeException(e);
         }
@@ -88,7 +109,7 @@ public class TestInterceptorPlugin {
         String newSql = null;
         try {
 
-            newSql = interceptor.process(sql, dataTableInfoDTO);
+            newSql = process(sql, dataTableInfoDTO);
         } catch (MybatisPluginException e) {
             throw new RuntimeException(e);
         } catch (JSQLParserException e) {
@@ -114,6 +135,7 @@ public class TestInterceptorPlugin {
         testInterceptor("SELECT * FROM sys_user a",
                 "SELECT * FROM sys_user a WHERE a.user_id = 1");
 
+
         testInterceptor("SELECT * FROM sys_user where name = 'and'",
                 "SELECT * FROM sys_user WHERE name = 'and' AND user_id = 1");
         testInterceptor("SELECT * FROM sys_user where name = 'and' or  age = 12",
@@ -128,6 +150,18 @@ public class TestInterceptorPlugin {
                 "SELECT * FROM sys_user WHERE NOT (id = ? OR name = ?) AND user_id = 1");
 
         testInterceptor("SELECT * FROM sys_user u WHERE not (u.id = ? OR u.name = ?)", "SELECT * FROM sys_user u WHERE NOT (u.id = ? OR u.name = ?) AND u.user_id = 1");
+
+        userDataScopeBO.setType(DataScopeEnum.DEPARTMENT_SU);
+
+        DataTableInfoDTO dataTableInfoDTO = new DataTableInfoDTO();
+        dataTableInfoDTO.setField("user_id");
+        dataTableInfoDTO.setModule("custom");
+        dataTableInfoDTO.setTable("crm_custom_user_r");
+
+        UserDataScopeBO userDataScopeBO = interceptor.dataScopeInfoService.currentDataScope(dataTableInfoDTO);
+        interceptor.set(userDataScopeBO);
+        Expression expression = interceptor.buildOriginTableExpression(new Column("a.user_id"));
+        System.out.println("expression = " + expression);
     }
 
     @Test

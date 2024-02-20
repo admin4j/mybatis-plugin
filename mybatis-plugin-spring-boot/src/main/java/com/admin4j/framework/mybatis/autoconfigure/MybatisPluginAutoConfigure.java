@@ -5,6 +5,7 @@ import com.admin4j.framework.mybatis.IDataScopeTableExpression;
 import com.admin4j.framework.mybatis.MybatisInterceptor;
 import com.admin4j.framework.mybatis.interceptor.SqlInterceptor;
 import com.admin4j.framework.mybatis.plugin.DataScopeInterceptor;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,8 @@ import java.util.List;
  * @author andanyang
  * @since 2023/7/3 11:28
  */
+// @ConditionalOnBean({SqlSessionFactory.class})
+@AutoConfigureBefore(name = "com.github.pagehelper.autoconfigure.PageHelperAutoConfiguration")
 public class MybatisPluginAutoConfigure {
 
     @Bean

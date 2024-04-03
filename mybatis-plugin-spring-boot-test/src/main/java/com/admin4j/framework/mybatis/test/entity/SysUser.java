@@ -1,4 +1,4 @@
-package com.admin4j.framework.mybatis.entity;
+package com.admin4j.framework.mybatis.test.entity;
 
 
 import lombok.Data;

@@ -1,8 +1,8 @@
-package com.admin4j.framework.mybatis.mapper;
+package com.admin4j.framework.mybatis.test.mapper;
 
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;
-import com.admin4j.framework.mybatis.entity.CrmCustom;
-import com.admin4j.framework.mybatis.service.DataScopeInfoHandler;
+import com.admin4j.framework.mybatis.test.entity.CrmCustom;
+import com.admin4j.framework.mybatis.test.service.DataScopeInfoHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

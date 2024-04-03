@@ -152,7 +152,7 @@ public class DataScopeInterceptor extends SelectSqlProcess {
 
             DataScope annotation = null;
             try {
-                annotation = MapperAnnotationUtil.getAnnotationByIdNoCache(msId, DataScope.class);
+                annotation = MapperAnnotationUtil.getAnnotationById(msId, DataScope.class);
                 if (annotation == null) {
                     return _EMPTY_DATA_TABLE;
                 }

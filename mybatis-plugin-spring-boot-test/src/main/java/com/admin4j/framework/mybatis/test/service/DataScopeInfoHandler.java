@@ -1,4 +1,4 @@
-package com.admin4j.framework.mybatis.service;
+package com.admin4j.framework.mybatis.test.service;
 
 import com.admin4j.framework.mybatis.IDataScopeInfoHandler;
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;

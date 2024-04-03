@@ -1,10 +1,10 @@
 package com.admin4j.framework.mybatis.autoconfigure;
 
-import com.admin4j.framework.mybatis.IDataScopeInfoHandler;
-import com.admin4j.framework.mybatis.IDataScopeTableExpression;
-import com.admin4j.framework.mybatis.MybatisInterceptor;
+import com.admin4j.framework.mybatis.*;
 import com.admin4j.framework.mybatis.interceptor.SqlInterceptor;
 import com.admin4j.framework.mybatis.plugin.DataScopeInterceptor;
+import com.admin4j.framework.mybatis.plugin.SqlExistInterceptor;
+import com.admin4j.framework.mybatis.plugin.SqlInInterceptor;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -21,10 +21,17 @@ import java.util.List;
 public class MybatisPluginAutoConfigure {
 
     @Bean
-    @ConditionalOnBean(IDataScopeInfoHandler.class)
-    @ConditionalOnMissingBean(DataScopeInterceptor.class)
-    public DataScopeInterceptor dataScopeInterceptor(IDataScopeInfoHandler dataScopeInfoHandler, IDataScopeTableExpression IDataScopeTableExpression) {
-        return new DataScopeInterceptor(dataScopeInfoHandler, IDataScopeTableExpression);
+    @ConditionalOnBean(IAppendInSqlHandler.class)
+    @ConditionalOnMissingBean(SqlInInterceptor.class)
+    public SqlInInterceptor sqlInInterceptor(IAppendInSqlHandler appendInSqlHandler) {
+        return new SqlInInterceptor(appendInSqlHandler);
+    }
+
+    @Bean
+    @ConditionalOnBean(IAppendExistSqlHandler.class)
+    @ConditionalOnMissingBean(SqlExistInterceptor.class)
+    public SqlExistInterceptor sqlExistInterceptor(IAppendExistSqlHandler sqlExistService) {
+        return new SqlExistInterceptor(sqlExistService);
     }
 
     @Bean
@@ -32,6 +39,13 @@ public class MybatisPluginAutoConfigure {
     @ConditionalOnMissingBean(IDataScopeTableExpression.class)
     public IDataScopeTableExpression dataScopeTableExpression() {
         return new IDataScopeTableExpression();
+    }
+
+    @Bean
+    @ConditionalOnBean({IDataScopeInfoHandler.class, IDataScopeTableExpression.class})
+    @ConditionalOnMissingBean(DataScopeInterceptor.class)
+    public DataScopeInterceptor dataScopeInterceptor(IDataScopeInfoHandler dataScopeInfoHandler, IDataScopeTableExpression IDataScopeTableExpression) {
+        return new DataScopeInterceptor(dataScopeInfoHandler, IDataScopeTableExpression);
     }
 
     @Bean

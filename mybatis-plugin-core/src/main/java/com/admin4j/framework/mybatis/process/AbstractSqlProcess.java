@@ -28,6 +28,7 @@ import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.*;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -407,6 +408,11 @@ public abstract class AbstractSqlProcess {
         if (ObjectUtils.isEmpty(tables)) {
             return currentExpression;
         }
+        // currentExpression 包含子查询
+        if (currentExpression != null && StringUtils.containsIgnoreCase(currentExpression.toString(), "SELECT")) {
+            processWhereSubSelect(currentExpression, whereSegment);
+        }
+
         // 构造每张表的条件
         List<Expression> expressions = tables.stream()
                 .map(item -> buildTableExpression(item, currentExpression, whereSegment))

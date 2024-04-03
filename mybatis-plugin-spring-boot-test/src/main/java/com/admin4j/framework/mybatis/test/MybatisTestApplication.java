@@ -1,4 +1,4 @@
-package com.admin4j.framework.mybatis;
+package com.admin4j.framework.mybatis.test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

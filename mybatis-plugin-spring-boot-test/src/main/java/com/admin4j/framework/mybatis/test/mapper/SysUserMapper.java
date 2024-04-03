@@ -1,4 +1,4 @@
-package com.admin4j.framework.mybatis.mapper;
+package com.admin4j.framework.mybatis.test.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 
@@ -8,5 +8,5 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface SysUserMapper {
-    
+
 }

@@ -72,6 +72,8 @@ public class TestInterceptorPlugin {
         dataTableInfoDTO.setModule("org");
         dataTableInfoDTO.setTable(dataTable);
         dataTableInfoDTO.setField(dataField);
+
+        dataScopeInfoService = iDataScopeInfoHandler;
     }
 
 
@@ -438,6 +440,16 @@ public class TestInterceptorPlugin {
 
         testInterceptor("SELECT * FROM sys_user u WHERE not (u.id = ? OR u.name = ?)",
                 "SELECT * FROM sys_user u WHERE NOT (u.id = ? OR u.name = ?) AND u.user_id IN (select user_id from sys_user_dept where dept_tree like '100,110,%' OR dept_tree like '100,120,%')");
+    }
+
+    @Test
+    public void testExist() {
+
+        userDataScopeBO.setType(DataScopeEnum.DEPARTMENT_SU);
+        String sql = "SELECT id FROM p_purchase_order WHERE del_flag = 0 AND EXISTS (SELECT 1 FROM sys_user WHERE sys_user.order_id = p_purchase_order.id) AND tenant_id = 1";
+
+        String s = testInterceptor(sql);
+        System.out.println("s = " + s);
     }
 
 }

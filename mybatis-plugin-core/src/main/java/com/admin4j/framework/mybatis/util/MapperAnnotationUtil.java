@@ -27,7 +27,7 @@ public class MapperAnnotationUtil {
     private static Object putCache(String msId, Class<?> anClass, Object value) {
         Map<Class<?>, Object> map = annotationCache.get(msId);
         if (map == null) {
-            map = new ConcurrentHashMap<>(64);
+            map = new ConcurrentHashMap<>(128);
         }
         return map.put(anClass, value);
     }

@@ -16,7 +16,6 @@ import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Parenthesis;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import org.apache.commons.lang3.StringUtils;
@@ -101,9 +100,8 @@ public class DataScopeInterceptor extends SelectSqlProcess {
         }
         if (StringUtils.isNotBlank(dataTableInfoDTO.getOrWhere())) {
 
-            EqualsTo equalsTo = new EqualsTo();
-            equalsTo.withLeftExpression(aliasColumn).withRightExpression(new PlainValue(dataTableInfoDTO.getOrWhere()));
-            expression = new OrExpression(equalsTo, expression);
+            PlainValue plainValue = new PlainValue(dataTableInfoDTO.getOrWhere());
+            expression = new OrExpression(plainValue, expression);
             expression = new Parenthesis(expression);
         }
         return expression;

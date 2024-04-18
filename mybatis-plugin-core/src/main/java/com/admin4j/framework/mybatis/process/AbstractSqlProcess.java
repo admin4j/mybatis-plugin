@@ -370,7 +370,12 @@ public abstract class AbstractSqlProcess {
                 // 正常 join on 表达式只有一个，立刻处理
                 if (originOnExpressions.size() == 1 && onTables != null) {
                     List<Expression> onExpressions = new LinkedList<>();
-                    onExpressions.add(builderExpression(originOnExpressions.iterator().next(), onTables, whereSegment));
+                    Expression originOnExpression = originOnExpressions.iterator().next();
+                    // originOnExpression 包含子查询
+                    if (originOnExpression != null && StringUtils.containsIgnoreCase(originOnExpression.toString(), "SELECT")) {
+                        processWhereSubSelect(originOnExpression, whereSegment);
+                    }
+                    onExpressions.add(builderExpression(originOnExpression, onTables, whereSegment));
                     join.setOnExpressions(onExpressions);
                     leftTable = mainTable == null ? joinTable : mainTable;
                     continue;
@@ -385,6 +390,11 @@ public abstract class AbstractSqlProcess {
                         if (ObjectUtils.isEmpty(currentTableList)) {
                             onExpressions.add(originOnExpression);
                         } else {
+                            // originOnExpression 包含子查询
+                            if (originOnExpression != null && StringUtils.containsIgnoreCase(originOnExpression.toString(), "SELECT")) {
+                                processWhereSubSelect(originOnExpression, whereSegment);
+                            }
+
                             onExpressions.add(builderExpression(originOnExpression, currentTableList, whereSegment));
                         }
                     }
@@ -406,11 +416,6 @@ public abstract class AbstractSqlProcess {
     protected Expression builderExpression(Expression currentExpression, List<Table> tables, final String whereSegment) {
         // 没有表需要处理直接返回
         if (ObjectUtils.isEmpty(tables)) {
-            return currentExpression;
-        }
-        // currentExpression 包含子查询
-        if (currentExpression != null && StringUtils.containsIgnoreCase(currentExpression.toString(), "SELECT")) {
-            processWhereSubSelect(currentExpression, whereSegment);
             return currentExpression;
         }
 

@@ -36,17 +36,15 @@ public class IDataScopeTableExpression {
      * @throws NoDataException
      */
     public Expression buildSelf(Column field, UserDataScopeBO userDataScopeBO) throws NoDataException {
-
-        PlainValue plainValue = null;
-        boolean isFirst = true;
-        StringBuilder sql = null;
-
-        sql = new StringBuilder("select user_id from sys_user_dept where ");
-
+        
         if (!userDataScopeBO.hasManagerDept()) {
             return new EqualsTo(field, userDataScopeBO.getUserId());
         }
 
+        StringBuilder sql = new StringBuilder("select user_id from sys_user_dept where ");
+
+        PlainValue plainValue = null;
+        boolean isFirst = true;
         // ** 要求-自己也在自己管理的部门之下 否则需要添加 userId = userDataScopeBO.getUserId()
         // 加上自己管理的部门
         // 处理子部门数据

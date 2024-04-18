@@ -52,6 +52,14 @@ public class CrmCustomMapperTest {
     }
 
     @Test
+    public void testQuery_SELF2() {
+
+        dataScopeInfoHandler.setDataScopeEnum(DataScopeEnum.SELF);
+        dataScopeInfoHandler.userDataScopeBO.setManagerDeptInfos(null);
+        doTest();
+    }
+
+    @Test
     public void testQuery_DEPARTMENT() {
 
         dataScopeInfoHandler.setDataScopeEnum(DataScopeEnum.DEPARTMENT);

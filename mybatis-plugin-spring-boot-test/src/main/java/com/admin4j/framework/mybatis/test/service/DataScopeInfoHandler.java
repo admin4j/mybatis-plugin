@@ -21,7 +21,7 @@ import java.util.Arrays;
 public class DataScopeInfoHandler implements IDataScopeInfoHandler {
 
     private DataScopeEnum dataScopeEnum = DataScopeEnum.CUSTOM_DEPARTMENT;
-    private UserDataScopeBO userDataScopeBO;
+    public UserDataScopeBO userDataScopeBO;
 
     @PostConstruct
     public void initUser() {

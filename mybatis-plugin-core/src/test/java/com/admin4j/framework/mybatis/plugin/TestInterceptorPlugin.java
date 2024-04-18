@@ -452,4 +452,24 @@ public class TestInterceptorPlugin {
         System.out.println("s = " + s);
     }
 
+    @Test
+    public void testJOnSUb() {
+
+        userDataScopeBO.setType(DataScopeEnum.SELF);
+        String sql = "SELECT a.id FROM p_purchase_order a INNER JOIN p_purchase_order_item b ON a.id = b.purchase_order_id AND b.del_flag = 0 AND a.tenant_id = 1 AND b.tenant_id = 1 AND a.id IN (SELECT use_id FROM sys_user ) WHERE a.del_flag = 0 ";
+
+        String s = testInterceptor(sql);
+        System.out.println("s = " + s);
+    }
+
+    @Test
+    public void testS() {
+
+        userDataScopeBO.setType(DataScopeEnum.SELF);
+        String sql = "SELECT a.id FROM p_purchase_order where user_id in (Select user_id from sys_user) ";
+
+        String s = testInterceptor(sql);
+        System.out.println("s = " + s);
+    }
+
 }

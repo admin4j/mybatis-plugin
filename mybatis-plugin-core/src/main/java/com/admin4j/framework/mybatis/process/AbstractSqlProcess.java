@@ -411,6 +411,7 @@ public abstract class AbstractSqlProcess {
         // currentExpression 包含子查询
         if (currentExpression != null && StringUtils.containsIgnoreCase(currentExpression.toString(), "SELECT")) {
             processWhereSubSelect(currentExpression, whereSegment);
+            return currentExpression;
         }
 
         // 构造每张表的条件

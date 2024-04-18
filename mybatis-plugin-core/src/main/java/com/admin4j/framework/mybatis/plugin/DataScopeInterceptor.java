@@ -5,6 +5,7 @@ import com.admin4j.framework.mybatis.IDataScopeTableExpression;
 import com.admin4j.framework.mybatis.constant.DataScope;
 import com.admin4j.framework.mybatis.constant.DataScopeEnum;
 import com.admin4j.framework.mybatis.entity.DataTableInfoDTO;
+import com.admin4j.framework.mybatis.entity.PlainValue;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
 import com.admin4j.framework.mybatis.exception.NoDataException;
 import com.admin4j.framework.mybatis.process.SelectSqlProcess;
@@ -13,8 +14,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.Parenthesis;
+import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.springframework.core.annotation.Order;
 
@@ -90,7 +95,18 @@ public class DataScopeInterceptor extends SelectSqlProcess {
 
         // 列信息
         Column aliasColumn = getAliasColumn(table, userDataScopeBO.getDataTableInfoDTO().getField());
-        return buildOriginTableExpression(aliasColumn);
+        Expression expression = buildOriginTableExpression(aliasColumn);
+        if (expression == null) {
+            return null;
+        }
+        if (StringUtils.isNotBlank(dataTableInfoDTO.getOrWhere())) {
+
+            EqualsTo equalsTo = new EqualsTo();
+            equalsTo.withLeftExpression(aliasColumn).withRightExpression(new PlainValue(dataTableInfoDTO.getOrWhere()));
+            expression = new OrExpression(equalsTo, expression);
+            expression = new Parenthesis(expression);
+        }
+        return expression;
     }
 
     /**
@@ -143,7 +159,7 @@ public class DataScopeInterceptor extends SelectSqlProcess {
         return true;
     }
 
-    private Map<String, DataTableInfoDTO> dataTableInfoDTOMap = new ConcurrentHashMap<>(64);
+    private Map<String, DataTableInfoDTO> dataTableInfoDTOMap = new ConcurrentHashMap<>(128);
     private static final DataTableInfoDTO _EMPTY_DATA_TABLE = new DataTableInfoDTO();
 
     private DataTableInfoDTO getDataTableInfo(String msId) {
@@ -156,10 +172,14 @@ public class DataScopeInterceptor extends SelectSqlProcess {
                 if (annotation == null) {
                     return _EMPTY_DATA_TABLE;
                 }
+                if (annotation.ignore()) {
+                    return _EMPTY_DATA_TABLE;
+                }
                 DataTableInfoDTO dataTableInfoDTO = new DataTableInfoDTO();
                 dataTableInfoDTO.setModule(annotation.module());
                 dataTableInfoDTO.setField(annotation.field());
                 dataTableInfoDTO.setTable(annotation.table());
+                dataTableInfoDTO.setOrWhere(annotation.orWhere());
                 return dataTableInfoDTO;
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);

@@ -21,7 +21,7 @@ public @interface SqlIn {
     String subTable();
 
     // 子表字段; in 前面的字段
-    String subField() default "id";
+    String subField() default "main_id";
 
     boolean ignore() default false;
 }

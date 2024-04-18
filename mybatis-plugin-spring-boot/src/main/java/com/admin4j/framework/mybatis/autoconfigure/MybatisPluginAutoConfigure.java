@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.annotation.Order;
 
 import java.util.List;
 
@@ -50,6 +51,7 @@ public class MybatisPluginAutoConfigure {
 
     @Bean
     @ConditionalOnBean(SqlInterceptor.class)
+    @Order(0)
     public MybatisInterceptor mybatisInterceptor(List<SqlInterceptor> sqlInterceptors) {
         return new MybatisInterceptor(sqlInterceptors);
     }

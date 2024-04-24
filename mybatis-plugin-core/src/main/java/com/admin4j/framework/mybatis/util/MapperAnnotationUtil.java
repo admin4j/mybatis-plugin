@@ -43,6 +43,10 @@ public class MapperAnnotationUtil {
      */
     public static <T extends Annotation> T getAnnotationById(String msId, Class<T> anClass) throws ClassNotFoundException {
 
+        //支持 分页插件
+        if (StringUtils.endsWith(msId, "_COUNT")) {
+            msId = msId.substring(0, msId.length() - 6);
+        }
         Object cacheObject = getCache(msId, anClass);
         if (EMPTY_Annotation.equals(cacheObject)) {
             return null;

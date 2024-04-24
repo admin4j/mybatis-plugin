@@ -23,7 +23,8 @@ public interface CrmCustomMapper {
 
     List<Object> queryLeftJoin(String an);
 
-    @SqlIn(mainTable = "p_purchase_order", subTable = "p_purchase_order_user", subField = "order_id")
+    //@SqlIn(mainTable = "p_purchase_order", subTable = "p_purchase_order_user", subField = "order_id")
+    @SqlIn(mainTable = "", subTable = "", ignore = true)
     @DataScope(table = "p_purchase_order_user", field = "user_id")
     List<CrmCustom> querySys(String name);
 }

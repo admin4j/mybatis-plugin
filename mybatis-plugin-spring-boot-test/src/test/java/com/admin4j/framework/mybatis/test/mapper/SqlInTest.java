@@ -1,7 +1,9 @@
 package com.admin4j.framework.mybatis.test.mapper;
 
+import com.admin4j.framework.mybatis.constant.SqlIn;
 import com.admin4j.framework.mybatis.plugin.SqlInInterceptor;
 import com.admin4j.framework.mybatis.test.entity.CrmCustom;
+import com.admin4j.framework.mybatis.util.MapperAnnotationUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +55,8 @@ public class SqlInTest {
 
     @Test
     public void testSqlMapper() throws Exception {
+
+        SqlIn annotationByIdNoCache = MapperAnnotationUtil.getAnnotationById("com.admin4j.framework.mybatis.test.mapper.CrmCustomMapper.querySys", SqlIn.class);
 
         List<CrmCustom> query = crmCustomMapper.querySys("12");
         System.out.println("query = " + query);

@@ -1,5 +1,6 @@
 package com.admin4j.framework.mybatis;
 
+import com.admin4j.framework.mybatis.constant.DataScopeEnum;
 import com.admin4j.framework.mybatis.entity.DeptInfoDTO;
 import com.admin4j.framework.mybatis.entity.PlainValue;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
@@ -22,6 +23,32 @@ import java.util.stream.Collectors;
 public class IDataScopeTableExpression {
 
     /**
+     * 构建数据权限表达式
+     *
+     * @throws NoDataException
+     */
+    public Expression build(Column field, UserDataScopeBO userDataScopeBO) throws NoDataException {
+
+        DataScopeEnum type = userDataScopeBO.getType();
+        switch (type) {
+            case ALL:
+                return buildAll(field, userDataScopeBO);
+            case SELF:
+                return buildSelf(field, userDataScopeBO);
+            case DEPARTMENT:
+                return buildDepartment(field, userDataScopeBO);
+            // 拼接sql
+            case DEPARTMENT_SU:
+                return buildDepartmentSub(field, userDataScopeBO);
+            case CUSTOM_DEPARTMENT:
+
+                return buildDepartmentCustom(field, userDataScopeBO);
+            default:
+                throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
      * 构建数据权限为 All的查询条件
      *
      * @throws NoDataException
@@ -36,7 +63,7 @@ public class IDataScopeTableExpression {
      * @throws NoDataException
      */
     public Expression buildSelf(Column field, UserDataScopeBO userDataScopeBO) throws NoDataException {
-        
+
         if (!userDataScopeBO.hasManagerDept()) {
             return new EqualsTo(field, userDataScopeBO.getUserId());
         }

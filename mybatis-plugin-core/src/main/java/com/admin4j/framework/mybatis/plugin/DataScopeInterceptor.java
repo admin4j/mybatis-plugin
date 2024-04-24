@@ -3,7 +3,6 @@ package com.admin4j.framework.mybatis.plugin;
 import com.admin4j.framework.mybatis.IDataScopeInfoHandler;
 import com.admin4j.framework.mybatis.IDataScopeTableExpression;
 import com.admin4j.framework.mybatis.constant.DataScope;
-import com.admin4j.framework.mybatis.constant.DataScopeEnum;
 import com.admin4j.framework.mybatis.entity.DataTableInfoDTO;
 import com.admin4j.framework.mybatis.entity.PlainValue;
 import com.admin4j.framework.mybatis.entity.UserDataScopeBO;
@@ -63,23 +62,7 @@ public class DataScopeInterceptor extends SelectSqlProcess {
     public Expression buildOriginTableExpression(final Column aliasColumn) throws NoDataException {
 
         UserDataScopeBO userDataScopeBO = userDataScopeThreadLocal.get();
-        DataScopeEnum type = userDataScopeBO.getType();
-        switch (type) {
-            case ALL:
-                return dataScopeTableExpression.buildAll(aliasColumn, userDataScopeBO);
-            case SELF:
-                return dataScopeTableExpression.buildSelf(aliasColumn, userDataScopeBO);
-            case DEPARTMENT:
-                return dataScopeTableExpression.buildDepartment(aliasColumn, userDataScopeBO);
-            // 拼接sql
-            case DEPARTMENT_SU:
-                return dataScopeTableExpression.buildDepartmentSub(aliasColumn, userDataScopeBO);
-            case CUSTOM_DEPARTMENT:
-
-                return dataScopeTableExpression.buildDepartmentCustom(aliasColumn, userDataScopeBO);
-            default:
-                throw new UnsupportedOperationException();
-        }
+        return dataScopeTableExpression.build(aliasColumn, userDataScopeBO);
     }
 
     @Override

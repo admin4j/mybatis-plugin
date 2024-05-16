@@ -64,6 +64,7 @@ public class IDataScopeTableExpression {
      */
     public Expression buildSelf(Column field, UserDataScopeBO userDataScopeBO) throws NoDataException {
 
+        // user_id = userDataScopeBO.getUserId()
         if (!userDataScopeBO.hasManagerDept()) {
             return new EqualsTo(field, userDataScopeBO.getUserId());
         }
@@ -97,7 +98,7 @@ public class IDataScopeTableExpression {
      * @throws NoDataException
      */
     public Expression buildDepartment(Column field, UserDataScopeBO userDataScopeBO) throws NoDataException {
-        // user_id in (select user_id from sys_user_dept where dept_id in (1,2))
+        // user_id in (select user_id from sys_user_dept where dept_id in (1,2) or dept_tree like '1,2,%')
         if (userDataScopeBO.getDeptInfos() == null || userDataScopeBO.getDeptInfos().isEmpty()) {
             throw new NoDataException("no any DeptInfo");
         }
